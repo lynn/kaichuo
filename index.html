@@ -31,10 +31,11 @@ const toneKeys = new Map([
   ['~', t7], ['7', t7],
 ]);
 
+
 const syllableForm = '(b|c|ch|d|f|g|h|j|k|l|m|n|p|r|s|sh|t|z|)([aàáâãāäảeèéêẽēëẻıìíîĩīïỉoòóôõōöỏuùúûũūüủyỳýŷỹȳÿỷ]+)(q?)';
 const reSyllables = RegExp(syllableForm, 'giu');
-const reWordAtEnd = RegExp('(' + syllableForm + ')+$', 'iu');
-const reParticle = /^(bı|pa|da|ka|ba|moq|ga|go|fı|cu|ta|beı|hu|je|ju|ku|kı|kıo|keo|na|ke|sa|sıa|tu|ra|ru|rı|roı|ro|re|hı|ja)$/iu;
+const reWordAtEnd = RegExp('(' + syllableForm + ')+[rpxntkflbzmdgv]?$', 'iu');
+const reParticle = /^(ba|baq|beı|bı|ceı|cu|da|fı|ga|go|hı|hoı|hu|ja|je|ju|ka|ke|keo|kı|kıo|ku|moq|na|pa|ra|re|rı|ro|roı|ru|sa|sıa|ta|tıu|tu)$/iu;
 const reNoun = /^(jı|suq|ho|muy|myı|ha|maq|hoq|hoa|mı|shu)$/iu;
 
 // Add a tone to a vowel, syllable, or word.
@@ -45,11 +46,20 @@ function adorn(vowel, tone) {
   return vowel.replace(/[aeıouy]/iu, v => (v.replace('ı', 'i') + tone).normalize());
 }
 
-// Add automatic diacritics to an input word.
+// Add automatic diacritics to an input word. Also handle Vietoaq tones.
 // auto('Ruqshua') === 'Rủqshūa'
 // auto('Rûqshua') === 'Rûqshūa'
 // auto('jı')      === 'jí'
+// auto('jıt')     === 'jî'
 function auto(word) {
+  // Turn "choadeod" into "choadeoqt"...
+  const qvie = 'lbzmdgv'.indexOf(word[word.length - 1].toLowerCase());
+  if (qvie >= 0) word = word.replace(/.$/, 'q' + 'rpxntkf'[qvie]);
+
+  // Then turn that into "chôadeoq".
+  const vie = 'rpxntkf'.indexOf(word[word.length - 1].toLowerCase());
+  if (vie >= 0) word = adorn(word.replace(/.$/, ''), [t1,t2,t3,t4,t5,t6,t7][vie]);
+
   word = word.normalize();
   if (reParticle.test(word)) return word;
   const isNoun = reNoun.test(word);
@@ -75,7 +85,7 @@ window.addEventListener('DOMContentLoaded', (_) => {
       e.preventDefault();
     } else if ((tone = toneKeys.get(e.key)) && i === j && v[i-1] && v[i-1].match(/^[aeıouy]$/iu)) {
       // Manually add a tone to the last word.
-      kai.value = v.substring(0, i).replace(reWordAtEnd, w => adorn(w, tone)) + v.substring(j);
+      kai.value = v.substring(0, i).replace(reWordAtEnd, x => adorn(x, tone)) + v.substring(j);
       kai.selectionStart = i;
       kai.selectionEnd = j;
       e.preventDefault();
@@ -96,6 +106,7 @@ window.addEventListener('DOMContentLoaded', (_) => {
   <div class="soa">
     <kbd>Chietua ji suq da.</kbd> &rarr; <samp>Chỉetūa jí súq da.</samp><br>
     <kbd>Chuo2 ni bi, miu sa poq choqgi^ maq da.</kbd> &rarr; <samp>Chúo nỉ bı, mỉu sa pỏq chôqgī máq da.</samp>
+    <kbd>Choqgit chuop</kbd> &rarr; <samp>Chôqgī chúo</samp>
   </div>
   <p></p>
   <textarea id="kai" rows="20" cols="80" autofocus placeholder="Kảı súq ba"></textarea>
