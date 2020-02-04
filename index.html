@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Toaq writer</title>
+  <style>
+    body { font-size: 18px; font-family: sans-serif; text-align: center; background: #f8f8f8; color: #222222; }
+    textarea { font-size: 18px; }
+    .soa kbd { font-family: Monaco, 'DejaVu Sans Mono', monospace; letter-spacing: -0.5px; }
+    .soa samp { font-family: inherit; font-weight: bold; }
+  </style>
+  <script>
+
+const t1 = '\u0304';
+const t2 = '\u0301';
+const t3 = '\u0308';
+const t4 = '\u0309';
+const t5 = '\u0302';
+const t6 = '\u0300';
+const t7 = '\u0303';
+ 
+const toneKeys = new Map([
+  ['-', t1], ['1', t1],
+  ['/', t2], ['2', t2],
+  ['"', t3], ['3', t3],
+  ['?', t4], ['4', t4],
+  ['^', t5], ['5', t5],
+  ['\\',t6], ['6', t6],
+  ['~', t7], ['7', t7],
+]);
+
+const syllableForm = '(b|c|ch|d|f|g|h|j|k|l|m|n|p|r|s|sh|t|z|)([aàáâãāäảeèéêẽēëẻıìíîĩīïỉoòóôõōöỏuùúûũūüủyỳýŷỹȳÿỷ]+)(q?)';
+const reSyllables = RegExp(syllableForm, 'giu');
+const reWordAtEnd = RegExp('(' + syllableForm + ')+$', 'iu');
+const reParticle = /^(bı|pa|da|ka|ba|moq|ga|go|fı|cu|ta|beı|hu|je|ju|ku|kı|kıo|keo|na|ke|sa|sıa|tu|ra|ru|rı|roı|ro|re|hı|ja)$/iu;
+const reNoun = /^(jı|suq|ho|muy|myı|ha|maq|hoq|hoa|mı|shu)$/iu;
+
+// Add a tone to a vowel, syllable, or word.
+// adorn('u',       t3) === 'ü'       (normalized)
+// adorn('fıeq',    t4) === 'fỉeq'    (normalized)
+// adorn('Ruqshua', t5) === 'Rûqshua' (normalized)
+function adorn(vowel, tone) {
+  return vowel.replace(/[aeıouy]/iu, v => (v.replace('ı', 'i') + tone).normalize());
+}
+
+// Add automatic diacritics to an input word.
+// auto('Ruqshua') === 'Rủqshūa'
+// auto('Rûqshua') === 'Rûqshūa'
+// auto('jı')      === 'jí'
+function auto(word) {
+  word = word.normalize();
+  if (reParticle.test(word)) return word;
+  const isNoun = reNoun.test(word);
+  var i = 0;
+  return word.replace(reSyllables, (_, c, v, q) => {
+    const tone = i++ == 0 ? (isNoun ? t2 : t4) : t1;
+    const isPlain = v.match(/^[aeıouy]+$/iu);
+    const vowel = isPlain ? adorn(v, tone) : v;
+    return c + vowel + q;
+  });
+}
+
+window.addEventListener('DOMContentLoaded', (_) => {
+  const kai = document.getElementById('kai');
+  let tone;
+  kai.addEventListener('keydown', (e) => {
+    const i = kai.selectionStart, j = kai.selectionEnd, v = kai.value;
+    if (e.key === 'i') {
+      // Type dotless ı's.
+      kai.value = v.substring(0, i) + 'ı' + v.substring(j);
+      kai.selectionStart = i + 1;
+      kai.selectionEnd = j + 1;
+      e.preventDefault();
+    } else if ((tone = toneKeys.get(e.key)) && i === j && v[i-1] && v[i-1].match(/^[aeıouy]$/iu)) {
+      // Manually add a tone to the last word.
+      kai.value = v.substring(0, i).replace(reWordAtEnd, w => adorn(w, tone)) + v.substring(j);
+      kai.selectionStart = i;
+      kai.selectionEnd = j;
+      e.preventDefault();
+    } else if (i === j && e.key.match(/^([ ,.;:?!…]|Enter)$/iu)) {
+      // Automatically add a tone to the last word.
+      const input = e.key === 'Enter' ? '\n' : e.key;
+      const pre = v.substring(0, i).replace(reWordAtEnd, auto) + input;
+      kai.value = pre + v.substring(j);
+      kai.selectionStart = kai.selectionEnd = pre.length;
+      e.preventDefault();
+    }
+  });
+});
+  </script>
+</head>
+<body>
+  <h1>mı Kảıchūo</h1>
+  <div class="soa">
+    <kbd>Chietua ji suq da.</kbd> &rarr; <samp>Chỉetūa jí súq da.</samp><br>
+    <kbd>Chuo2 ni bi, miu sa poq choqgi^ maq da.</kbd> &rarr; <samp>Chúo nỉ bı, mỉu sa pỏq chôqgī máq da.</samp>
+  </div>
+  <p></p>
+  <textarea id="kai" rows="20" cols="80" autofocus placeholder="Kảı súq ba"></textarea>
+</body>
+</html>
