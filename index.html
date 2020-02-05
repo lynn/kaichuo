@@ -34,9 +34,9 @@ const toneKeys = new Map([
 
 const syllableForm = '(b|c|ch|d|f|g|h|j|k|l|m|n|p|r|s|sh|t|z|)([aàáâãāäảeèéêẽēëẻıìíîĩīïỉoòóôõōöỏuùúûũūüủyỳýŷỹȳÿỷ]+)(q?)';
 const reSyllables = RegExp(syllableForm, 'giu');
-const reWordAtEnd = RegExp('(' + syllableForm + ')+[rpxntkflbzmdgv]?$', 'iu');
-const reParticle = /^(ba|baq|beı|bı|ceı|cu|da|fı|ga|go|hı|hoı|hu|ja|je|ju|ka|ke|keo|kı|kıo|ku|la|moq|na|pa|ra|re|rı|ro|roı|ru|sa|sıa|ta|tıu|tu)$/iu;
-const reNoun = /^(jı|suq|ho|muy|myı|ha|maq|hoq|hoa|mı|shu)$/iu;
+const reWordAtEnd = RegExp('(' + syllableForm + ')+[rpxntkflbzmdgv8]?$', 'iu');
+const reParticle = /^(ba|baq|beı|bı|ceı|cu|da|fı|ga|go|hı|hoı|hu|ja|je|ju|ka|ke|keo|kı|kıo|ku|la|moq|na|pa|ra|re|rı|ro|roı|ru|sa|sıa|ta|teo|tıu|tu)$/iu;
+const reNoun = /^(jı|suq|ho|muy|myı|ha|maq|hoq|hoa|mı|shu|mo)$/iu;
 
 // Add a tone to a vowel, syllable, or word.
 // adorn('u',       t3) === 'ü'       (normalized)
@@ -60,14 +60,19 @@ function auto(word) {
   const vie = 'rpxntkf'.indexOf(word[word.length - 1].toLowerCase());
   if (vie >= 0) word = adorn(word.replace(/.$/, ''), [t1,t2,t3,t4,t5,t6,t7][vie]);
 
+  // A trailing 8 means "no tone / dictionary form".
+  const neutralTone = /8$/.test(word);
+  word = word.replace(/8$/, '');
+
   word = word.normalize();
   if (reParticle.test(word)) return word;
   const isNoun = reNoun.test(word);
   var i = 0;
   return word.replace(reSyllables, (_, c, v, q) => {
-    const tone = i++ == 0 ? (isNoun ? t2 : t4) : t1;
-    const isPlain = v.match(/^[aeıouy]+$/iu);
-    const vowel = isPlain ? adorn(v, tone) : v;
+    const isFirst = i++ === 0;
+    const tone = isFirst ? (isNoun ? t2 : t4) : t1;
+    const alreadyHasTone = !/^[aeıouy]+$/iu.test(v);
+    const vowel = isFirst && neutralTone || alreadyHasTone ? v : adorn(v, tone);
     return c + vowel + q;
   });
 }
@@ -83,18 +88,23 @@ window.addEventListener('DOMContentLoaded', (_) => {
       kai.selectionStart = i + 1;
       kai.selectionEnd = j + 1;
       e.preventDefault();
-    } else if ((tone = toneKeys.get(e.key)) && i === j && v[i-1] && v[i-1].match(/^[aeıouy]$/iu)) {
+    } else if ((tone = toneKeys.get(e.key)) && i === j && v[i-1] && /^[aeıouy]$/iu.test(v[i-1])) {
       // Manually add a tone to the last word.
       kai.value = v.substring(0, i).replace(reWordAtEnd, x => adorn(x, tone)) + v.substring(j);
       kai.selectionStart = i;
       kai.selectionEnd = j;
       e.preventDefault();
-    } else if (i === j && e.key.match(/^([ ,.;:?!…]|Enter)$/iu)) {
+    } else if (i === j && /^([ ,.;:?!…]|Enter)$/iu.test(e.key)) {
       // Automatically add a tone to the last word.
       const input = e.key === 'Enter' ? '\n' : e.key;
       const pre = v.substring(0, i).replace(reWordAtEnd, auto) + input;
       kai.value = pre + v.substring(j);
       kai.selectionStart = kai.selectionEnd = pre.length;
+      e.preventDefault();
+    } else if (i === j && /^[<>]$/.test(e.key) && v[i-1] && v[i-1] === e.key) {
+      kai.value = v.substring(0, i-1) + {'<': '«', '>': '»'}[e.key] + v.substring(j);
+      kai.selectionStart = i;
+      kai.selectionEnd = j;
       e.preventDefault();
     }
   });
