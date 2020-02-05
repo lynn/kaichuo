@@ -31,6 +31,12 @@ const toneKeys = new Map([
   ['~', t7], ['7', t7],
 ]);
 
+const compose = new Map([
+  ['<<', '«'],
+  ['<:', '‹'],
+  ['>>', '»'],
+  ['>:', '›'],
+]);
 
 const syllableForm = '(b|c|ch|d|f|g|h|j|k|l|m|n|p|r|s|sh|t|z|)([aàáâãāäảeèéêẽēëẻıìíîĩīïỉoòóôõōöỏuùúûũūüủyỳýŷỹȳÿỷ]+)(q?)';
 const reSyllables = RegExp(syllableForm, 'giu');
@@ -79,7 +85,7 @@ function auto(word) {
 
 window.addEventListener('DOMContentLoaded', (_) => {
   const kai = document.getElementById('kai');
-  let tone;
+  let tone, cm, ch;
   kai.addEventListener('keydown', (e) => {
     const i = kai.selectionStart, j = kai.selectionEnd, v = kai.value;
     if (e.key === 'i') {
@@ -87,6 +93,12 @@ window.addEventListener('DOMContentLoaded', (_) => {
       kai.value = v.substring(0, i) + 'ı' + v.substring(j);
       kai.selectionStart = i + 1;
       kai.selectionEnd = j + 1;
+      e.preventDefault();
+    } else if (i === j && v[i-1] && (ch = (console.log(v[i-1] + e.key), compose.get(v[i-1] + e.key)))) {
+      // Compose characters.
+      kai.value = v.substring(0, i-1) + ch + v.substring(j);
+      kai.selectionStart = i;
+      kai.selectionEnd = j;
       e.preventDefault();
     } else if ((tone = toneKeys.get(e.key)) && i === j && v[i-1] && /^[aeıouy]$/iu.test(v[i-1])) {
       // Manually add a tone to the last word.
@@ -100,11 +112,6 @@ window.addEventListener('DOMContentLoaded', (_) => {
       const pre = v.substring(0, i).replace(reWordAtEnd, auto) + input;
       kai.value = pre + v.substring(j);
       kai.selectionStart = kai.selectionEnd = pre.length;
-      e.preventDefault();
-    } else if (i === j && /^[<>]$/.test(e.key) && v[i-1] && v[i-1] === e.key) {
-      kai.value = v.substring(0, i-1) + {'<': '«', '>': '»'}[e.key] + v.substring(j);
-      kai.selectionStart = i;
-      kai.selectionEnd = j;
       e.preventDefault();
     }
   });
