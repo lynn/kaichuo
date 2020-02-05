@@ -8,11 +8,11 @@
   <style>
     body { font-size: 18px; font-family: sans-serif; text-align: center; background: #f8f8f8; color: #222222; }
     textarea { font-size: 18px; }
-    .soa kbd { font-family: Monaco, 'DejaVu Sans Mono', monospace; letter-spacing: -0.5px; }
+    .soa kbd { font-family: 'DejaVu Sans Mono', monospace; font-size: 17px; letter-spacing: -0.7px; }
+    .soa kbd b { font-weight: bold; }
     .soa samp { font-family: inherit; font-weight: bold; }
   </style>
   <script>
-
 const t1 = '\u0304';
 const t2 = '\u0301';
 const t3 = '\u0308';
@@ -20,6 +20,7 @@ const t4 = '\u0309';
 const t5 = '\u0302';
 const t6 = '\u0300';
 const t7 = '\u0303';
+const tones = [t1, t2, t3, t4, t5, t6, t7];
  
 const toneKeys = new Map([
   ['-', t1], ['1', t1],
@@ -41,8 +42,10 @@ const compose = new Map([
 const syllableForm = '(b|c|ch|d|f|g|h|j|k|l|m|n|p|r|s|sh|t|z|)([aàáâãāäảeèéêẽēëẻıìíîĩīïỉoòóôõōöỏuùúûũūüủyỳýŷỹȳÿỷ]+)(q?)';
 const reSyllables = RegExp(syllableForm, 'giu');
 const reWordAtEnd = RegExp('(' + syllableForm + ')+[rpxntkflbzmdgv8]?$', 'iu');
-const reParticle = /^(ba|baq|beı|bı|ceı|cu|da|fı|ga|go|hı|hoı|hu|ja|je|ju|ka|ke|keo|kı|kıo|ku|la|moq|na|pa|ra|re|rı|ro|roı|ru|sa|sıa|ta|teo|tıu|tu)$/iu;
-const reNoun = /^(jı|suq|ho|muy|myı|ha|maq|hoq|hoa|mı|shu|mo)$/iu;
+const reParticle = /^(ba|baq|beı|bı|ceı|co|cu|da|fı|ga|go|hı|hoı|hu|ja|je|ju|ka|ke|keo|kı|kıo|ku|la|moq|na|pa|ra|re|rı|ro|roı|ru|sa|sıa|ta|teo|tıo|tıu|tu)$/iu;
+const reNoun = /^(aq|ha|ho|hoa|hoq|jı|maq|mo|muy|myı|mı|shu|suq)$/iu;
+const reConvertKey = /^([ ,.;:?!…]|Enter)$/iu;
+const keyChar = key => key === 'Enter' ? '\n' : key;
 
 // Add a tone to a vowel, syllable, or word.
 // adorn('u',       t3) === 'ü'       (normalized)
@@ -53,18 +56,18 @@ function adorn(vowel, tone) {
 }
 
 // Add automatic diacritics to an input word. Also handle Vietoaq tones.
-// auto('Ruqshua') === 'Rủqshūa'
-// auto('Rûqshua') === 'Rûqshūa'
-// auto('jı')      === 'jí'
-// auto('jıt')     === 'jî'
-function auto(word) {
+// convert('Ruqshua') === 'Rủqshūa'
+// convert('Rûqshua') === 'Rûqshūa'
+// convert('jı')      === 'jí'
+// convert('jıt')     === 'jî'
+function convert(word) {
   // Turn "choadeod" into "choadeoqt"...
   const qvie = 'lbzmdgv'.indexOf(word[word.length - 1].toLowerCase());
   if (qvie >= 0) word = word.replace(/.$/, 'q' + 'rpxntkf'[qvie]);
 
   // Then turn that into "chôadeoq".
   const vie = 'rpxntkf'.indexOf(word[word.length - 1].toLowerCase());
-  if (vie >= 0) word = adorn(word.replace(/.$/, ''), [t1,t2,t3,t4,t5,t6,t7][vie]);
+  if (vie >= 0) word = adorn(word.replace(/.$/, ''), tones[vie]);
 
   // A trailing 8 means "no tone / dictionary form".
   const neutralTone = /8$/.test(word);
@@ -85,34 +88,29 @@ function auto(word) {
 
 window.addEventListener('DOMContentLoaded', (_) => {
   const kai = document.getElementById('kai');
-  let tone, cm, ch;
+  let ch, tone;
   kai.addEventListener('keydown', (e) => {
-    const i = kai.selectionStart, j = kai.selectionEnd, v = kai.value;
+    const previous = kai.value[kai.selectionStart - 1];
+    // Apply a function to the text before the cursor.
+    function write(f) {
+      const cur = f(kai.value.substring(0, kai.selectionStart));
+      kai.value = cur + kai.value.substring(kai.selectionEnd);
+      kai.selectionStart = kai.selectionEnd = cur.length;
+      e.preventDefault();
+    }
+    
     if (e.key === 'i') {
       // Type dotless ı's.
-      kai.value = v.substring(0, i) + 'ı' + v.substring(j);
-      kai.selectionStart = i + 1;
-      kai.selectionEnd = j + 1;
-      e.preventDefault();
-    } else if (i === j && v[i-1] && (ch = (console.log(v[i-1] + e.key), compose.get(v[i-1] + e.key)))) {
+      write(p => p + 'ı');
+    } else if (ch = compose.get(previous + e.key)) {
       // Compose characters.
-      kai.value = v.substring(0, i-1) + ch + v.substring(j);
-      kai.selectionStart = i;
-      kai.selectionEnd = j;
-      e.preventDefault();
-    } else if ((tone = toneKeys.get(e.key)) && i === j && v[i-1] && /^[aeıouy]$/iu.test(v[i-1])) {
+      write(p => p.replace(/.$/, ch));
+    } else if (tone = toneKeys.get(e.key)) {
       // Manually add a tone to the last word.
-      kai.value = v.substring(0, i).replace(reWordAtEnd, x => adorn(x, tone)) + v.substring(j);
-      kai.selectionStart = i;
-      kai.selectionEnd = j;
-      e.preventDefault();
-    } else if (i === j && /^([ ,.;:?!…]|Enter)$/iu.test(e.key)) {
-      // Automatically add a tone to the last word.
-      const input = e.key === 'Enter' ? '\n' : e.key;
-      const pre = v.substring(0, i).replace(reWordAtEnd, auto) + input;
-      kai.value = pre + v.substring(j);
-      kai.selectionStart = kai.selectionEnd = pre.length;
-      e.preventDefault();
+      write(p => p.replace(reWordAtEnd, word => adorn(word, tone)));
+    } else if (reConvertKey.test(e.key)) {
+      // Automatically add tones to (and Vietoaq-parse) the last word.
+      write(p => p.replace(reWordAtEnd, convert) + keyChar(e.key));
     }
   });
 });
@@ -123,7 +121,9 @@ window.addEventListener('DOMContentLoaded', (_) => {
   <div class="soa">
     <kbd>Chietua ji suq da.</kbd> &rarr; <samp>Chỉetūa jí súq da.</samp><br>
     <kbd>Chuo2 ni bi, miu sa poq choqgi^ maq da.</kbd> &rarr; <samp>Chúo nỉ bı, mỉu sa pỏq chôqgī máq da.</samp><br>
-    <kbd><a href="https://uakci.eu/wiki/vietoaq">Choqgit chuop</a></kbd> &rarr; <samp>Chôqgī chúo</samp>
+    <kbd><a href="https://uakci.eu/wiki/vietoaq">
+      &lt;&lt;Choqgi<b>t</b> jaq<b>f</b> chuo<b>p</b>&gt;&gt;
+    </a></kbd> &rarr; <samp>«Chôqgī jãq chúo»</samp>
   </div>
   <p></p>
   <textarea id="kai" rows="20" cols="80" autofocus placeholder="Kảı súq ba"></textarea>
