@@ -46,7 +46,7 @@ const compose = new Map([
 const syllableForm = '(b|c|ch|d|f|g|h|j|k|l|m|n|p|r|s|sh|t|z|)([aàáâãāäảeèéêẽēëẻıìíîĩīïỉoòóôõōöỏuùúûũūüủyỳýŷỹȳÿỷ]+)(q?)';
 const reSyllables = RegExp(syllableForm, 'giu');
 const reWordAtEnd = RegExp('(' + syllableForm + ')+[rpxntkflbzmdgv8]?$', 'iu');
-const reParticle = /^(ba|baq|beı|bı|ceı|co|cu|da|fı|ga|go|hı|hoı|hu|ja|je|ju|ka|ke|keo|kı|kıo|ku|la|moq|na|pa|ra|re|rı|ro|roı|ru|sa|sıa|ta|teo|tıo|tıu|tu)$/iu;
+const reParticle = /^(ba|baq|beı|bı|ceı|co|cu|da|fı|ga|go|hı|hoı|hu|ja|je|ju|ka|ke|keo|kı|kıo|ku|la|moq|na|pa|ra|re|rı|ro|roı|ru|sa|sıa|ta|teo|tıo|tıu|to|tu)$/iu;
 const reNoun = /^(aq|ha|ho|hoa|hoq|jı|maq|mo|muy|myı|mı|shu|suq)$/iu;
 const reConvertKey = /^([ ,.;:?!…]|Enter)$/iu;
 const keyChar = key => key === 'Enter' ? '\n' : key;
