@@ -109,7 +109,7 @@ window.addEventListener('DOMContentLoaded', (_) => {
     } else if (ch = compose.get(previous + e.key)) {
       // Compose characters.
       write(p => p.replace(/.$/, ch));
-    } else if (tone = toneKeys.get(e.key)) {
+    } else if ((tone = toneKeys.get(e.key)) && (!/[0-9]/.test(e.key) || /[a-zı]/i.test(previous))) {
       // Manually add a tone to the last word.
       write(p => p.replace(reWordAtEnd, word => adorn(word, tone)));
     } else if (reConvertKey.test(e.key)) {
