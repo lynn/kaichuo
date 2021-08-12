@@ -8,11 +8,11 @@
   <meta name="description" content="Sa chủo kïu chỏq kảı hóa pó mí Hỏetōaq">
   <meta name="language" content="Toaq">
   <meta name="author" content="mı Lỉq">
-  
+
   <title>mı Kảıchūo</title>
   <style>
     body { font-size: 18px; font-family: sans-serif; text-align: center; background: #f8f8f8; color: #222222; }
-    textarea { font-size: 18px; }
+    textarea { font-size: 18px; margin-top: 1em; }
     .soa kbd { font-family: 'DejaVu Sans Mono', monospace; font-size: 17px; letter-spacing: -0.7px; }
     .soa samp { font-family: inherit; font-weight: bold; }
   </style>
@@ -25,7 +25,7 @@ const t5 = '\u0302';
 const t6 = '\u0300';
 const t7 = '\u0303';
 const tones = [t1, t2, t3, t4, t5, t6, t7];
- 
+
 const toneKeys = new Map([
   ['-', t1], ['1', t1],
   ['/', t2], ['2', t2],
@@ -41,13 +41,15 @@ const compose = new Map([
   ['<:', '‹'],
   ['>>', '»'],
   ['>:', '›'],
+  ['[[', '⟦'],
+  [']]', '⟧'],
 ]);
 
 const syllableForm = '(b|c|ch|d|f|g|h|j|k|l|m|n|p|r|s|sh|t|z|)([aàáâãāäảeèéêẽēëẻıìíîĩīïỉoòóôõōöỏuùúûũūüủyỳýŷỹȳÿỷ]+)(q?)';
 const reSyllables = RegExp(syllableForm, 'giu');
 const reWordAtEnd = RegExp('(' + syllableForm + ')+[rpxntkflbzmdgv8]?$', 'iu');
-const reParticle = /^(ba|baq|beı|bı|ceı|co|cu|da|fı|ga|go|hı|hoı|hu|ja|je|ju|ka|ke|keo|kı|kıo|ku|la|moq|na|pa|ra|re|rı|ro|roı|ru|sa|sıa|ta|teo|tıo|tıu|to|tu)$/iu;
-const reNoun = /^(aq|ha|ho|hoa|hoq|jı|maq|mo|muy|myı|mı|shu|suq)$/iu;
+const reParticle = /^(ba|baq|beı|bı|ceı|co|cu|da|fı|ga|go|hı|hoı|hu|ja|je|ju|ka|ke|keo|kı|kıo|ku|la|moq|na|pa|ra|re|rı|ro|roı|ru|sa|sıa|ta|teo|tıo|tıu|to|tou|tu)$/iu;
+const reNoun = /^(aq|ha|ho|hoa|hoq|jı|maq|mo|muy|myı|mıy?|shu|suq)$/iu;
 const reConvertKey = /^([ ,.;:?!…]|Enter)$/iu;
 const keyChar = key => key === 'Enter' ? '\n' : key;
 
@@ -56,6 +58,7 @@ const keyChar = key => key === 'Enter' ? '\n' : key;
 // adorn('fıeq',    t4) === 'fỉeq'    (normalized)
 // adorn('Ruqshua', t5) === 'Rûqshua' (normalized)
 function adorn(vowel, tone) {
+  if (tone === '') return vowel;
   return vowel.replace(/[aeıouy]/iu, v => (v.replace('ı', 'i') + tone).normalize());
 }
 
@@ -65,6 +68,9 @@ function adorn(vowel, tone) {
 // convert('jı')      === 'jí'
 // convert('jıt')     === 'jî'
 function convert(word) {
+  const add_t1 = document.getElementById('add-t1').checked;
+  const add_t4 = document.getElementById('add-t4').checked;
+
   // Turn "choadeod" into "choadeoqt"...
   const qvie = 'lbzmdgv'.indexOf(word[word.length - 1].toLowerCase());
   if (qvie >= 0) word = word.replace(/.$/, 'q' + 'rpxntkf'[qvie]);
@@ -83,7 +89,7 @@ function convert(word) {
   var i = 0;
   return word.replace(reSyllables, (_, c, v, q) => {
     const isFirst = i++ === 0;
-    const tone = isFirst ? (isNoun ? t2 : t4) : t1;
+    const tone = isFirst ? (isNoun ? t2 : (add_t4 ? t4 : "")) : (add_t1 ? t1 : "");
     const alreadyHasTone = !/^[aeıouy]+$/iu.test(v);
     const vowel = isFirst && neutralTone || alreadyHasTone ? v : adorn(v, tone);
     return c + vowel + q;
@@ -92,6 +98,7 @@ function convert(word) {
 
 window.addEventListener('DOMContentLoaded', (_) => {
   const kai = document.getElementById('kai');
+  kai.value = localStorage.getItem("kai");
   let ch, tone;
   kai.addEventListener('keydown', (e) => {
     const previous = kai.value[kai.selectionStart - 1];
@@ -102,7 +109,7 @@ window.addEventListener('DOMContentLoaded', (_) => {
       kai.selectionStart = kai.selectionEnd = cur.length;
       e.preventDefault();
     }
-    
+
     if (e.key === 'i') {
       // Type dotless ı's.
       write(p => p + 'ı');
@@ -116,6 +123,8 @@ window.addEventListener('DOMContentLoaded', (_) => {
       // Automatically add tones to (and Vietoaq-parse) the last word.
       write(p => p.replace(reWordAtEnd, convert) + keyChar(e.key));
     }
+
+    localStorage.setItem("kai", kai.value);
   });
 });
   </script>
@@ -125,11 +134,15 @@ window.addEventListener('DOMContentLoaded', (_) => {
   <div class="soa">
     <kbd>Chietua ji suq da.</kbd> &rarr; <samp>Chỉetūa jí súq da.</samp><br>
     <kbd>Chuo2 ni bi, miu sa poq choqgi^ maq da.</kbd> &rarr; <samp>Chúo nỉ bı, mỉu sa pỏq chôqgī máq da.</samp><br>
-    <kbd><a href="https://uakci.eu/wiki/vietoaq">
+    <kbd><a href="https://foldr.moe/vietoaq">
       &lt;&lt;Choqgi<b>t</b> jaq<b>f</b> chuo<b>p</b>&gt;&gt;
     </a></kbd> &rarr; <samp>«Chôqgī jãq chúo»</samp>
+    <br>
+    <input type="checkbox" checked id="add-t1">
+    <label for="add-t1">ā</label>
+    <input type="checkbox" checked id="add-t4">
+    <label for="add-t4">ả</label>
   </div>
-  <p></p>
   <textarea id="kai" rows="20" cols="80" autofocus placeholder="Kảı súq ba"></textarea>
 </body>
 </html>
