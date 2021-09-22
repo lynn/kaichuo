@@ -59,7 +59,7 @@ const reWordAtEnd = RegExp('(' + syllableForm + ')+[rpxntkflbzmdgv8]?$', 'iu');
 const reParticle = /^(ba|baq|beı|bı|co|cu|cy|da|fı|ga|go|hı|hoı|hu|ja|je|ju|juaq|ka|ke|keo|kı|kıo|ku|ky|mao|moq|na|nha|nhu|pa|ra|re|rı|ro|roı|ru|sa|sıa|teo|tıo|tıu|to|tou|tu|tushı|tuq)$/iu;
 const reInterjection = /^(ıfu|aja|ahı|ume|ufu|ua|obe|upa|buzy?|oaı|ubaı|enı|aıba|obe|nho|zı|jadı|kıkı)$/iu;
 const reNoun = /^(aq|bou|fuy|ha|ho|hoa|hoq|jı|kuy|maq|muy|mıy?|nhao|rou|suq|ta|ze)$/iu;
-const reConvertKey = /^([ ,.;:?!…]|Enter)$/iu;
+const reConvertKey = /^([ ,.;:?!…>»]|Enter)$/iu;
 const keyChar = key => key === 'Enter' ? '\n' : key;
 
 // Add a tone to a vowel, syllable, or word.
@@ -150,13 +150,13 @@ window.addEventListener('DOMContentLoaded', (_) => {
   <div class="soa">
       <details><summary>Help</summary>
     <p>This is a tool for writing <a href="https://toaq.net">Toaq</a> on an everyday keyboard.</p>
-    <p>Words you type will get automatically adorned with tones:</p>
-    <p class="ex"><kbd>Chietua ji suq da.</kbd> <br>&rarr; <samp>Chỉetua jí súq da.</samp></p>
-    <p>The default tone is <samp>ỏ</samp> for verbs, <samp>ó</samp> for pronouns, and neutral for particles.</p>
+    <p>Words you type are automatically adorned with tone markers:</p>
+    <p class="ex"><kbd>Chietua ji suq nha.</kbd> <br>&rarr; <samp>Chỉetua jí súq nha.</samp></p>
+    <p>(The default is <samp>ỏ</samp> for verbs, <samp>ó</samp> for pronouns, and neutral for particles.)</p>
     </p>
     <p>To type tones, press <kbd>2345678</kbd> or <kbd>/"?^\~</kbd> or <kbd>pxntkf</kbd> at the end of a word:</p>
     <p class="ex"><kbd>Chuo2 ni bi, miu sa poq choqgi^ maq da.</kbd> <br>&rarr; <samp>Chúo nỉ bı, mỉu sa pỏq chôqgı máq da.</samp></p>
-    <p>Type <kbd>i9 &lt;&lt; &gt;&gt; &lt;: &gt;: [[ ]]</kbd> to input <samp>i « » ‹ › ⟦ ⟧</samp>.</p>
+    <p>Type <kbd>i9 &lt;&lt; &gt;&gt; &lt;: &gt;: [[ ]]</kbd> to write <samp>i « » ‹ › ⟦ ⟧</samp>.</p>
     <p>Disable this checkbox if you want sparse tone marking:
     <input hidden type="checkbox" id="add-t1">
     <label hidden for="add-t1">ā</label>
