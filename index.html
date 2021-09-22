@@ -5,16 +5,23 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
   <meta http-equiv="content-type" content="text/html">
-  <meta name="description" content="Sa chủo kïu chỏq kảı hóa pó mí Hỏetōaq">
+  <meta name="description" content="Sa chủo kïu chỏq kảı hóa pó Tỏaqzu">
   <meta name="language" content="Toaq">
   <meta name="author" content="mı Lỉq">
+  <link href='https://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>
+  <link href='https://fonts.googleapis.com/css?family=Raleway' rel='stylesheet' type='text/css'>
 
-  <title>mı Kảıchūo</title>
+  <title>mı Kảıchuo</title>
   <style>
-    body { font-size: 18px; font-family: sans-serif; text-align: center; background: #f8f8f8; color: #222222; }
-    textarea { font-size: 18px; margin-top: 1em; }
-    .soa kbd { font-family: 'DejaVu Sans Mono', monospace; font-size: 17px; letter-spacing: -0.7px; }
-    .soa samp { font-family: inherit; font-weight: bold; }
+    body { font-size: 18px; font-family: 'Open Sans', sans-serif; text-align: center; background: #f8f8f8; color: #222222; }
+    h1 { font-family: 'Raleway', sans-serif; }
+    textarea { font-family: inherit; font-size: 18px; margin-top: 1em; padding: 0.5em; }
+    .soa { max-width: 40em; margin: auto; text-align: start; }
+    .soa p.ex { margin-inline-start: 4em; text-indent: 20px; }
+    .soa kbd {
+        font-family: 'Monaco', 'Consolas', 'DejaVu Sans Mono', monospace;
+        background: rgba(0,0,0,0.1); padding: 1px 4px; border-radius: 4px; }
+    .soa samp { font-family: inherit; font-weight: bold; color: #197A92; }
   </style>
   <script>
 const t1 = '\u0304';
@@ -37,6 +44,7 @@ const toneKeys = new Map([
 ]);
 
 const compose = new Map([
+  ['ı9', 'i'],
   ['<<', '«'],
   ['<:', '‹'],
   ['>>', '»'],
@@ -45,11 +53,12 @@ const compose = new Map([
   [']]', '⟧'],
 ]);
 
-const syllableForm = '(b|c|ch|d|f|g|h|j|k|l|m|n|p|r|s|sh|t|z|)([aàáâãāäảeèéêẽēëẻıìíîĩīïỉoòóôõōöỏuùúûũūüủyỳýŷỹȳÿỷ]+)(q?)';
+const syllableForm = '(b|c|ch|d|f|g|h|j|k|l|m|n|nh|p|r|s|sh|t|z|)([aàáâãāäảeèéêẽēëẻıìíîĩīïỉoòóôõōöỏuùúûũūüủyỳýŷỹȳÿỷ]+)(q?)';
 const reSyllables = RegExp(syllableForm, 'giu');
 const reWordAtEnd = RegExp('(' + syllableForm + ')+[rpxntkflbzmdgv8]?$', 'iu');
-const reParticle = /^(ba|baq|beı|bı|ceı|co|cu|da|fı|ga|go|hı|hoı|hu|ja|je|ju|ka|ke|keo|kı|kıo|ku|la|moq|na|pa|ra|re|rı|ro|roı|ru|sa|sıa|ta|teo|tıo|tıu|to|tou|tu)$/iu;
-const reNoun = /^(aq|ha|ho|hoa|hoq|jı|maq|mo|muy|myı|mıy?|shu|suq)$/iu;
+const reParticle = /^(ba|baq|beı|bı|co|cu|cy|da|fı|ga|go|hı|hoı|hu|ja|je|ju|juaq|ka|ke|keo|kı|kıo|ku|ky|mao|moq|na|nha|nhu|pa|ra|re|rı|ro|roı|ru|sa|sıa|teo|tıo|tıu|to|tou|tu|tushı|tuq)$/iu;
+const reInterjection = /^(ıfu|aja|ahı|ume|ufu|ua|obe|upa|buzy?|oaı|ubaı|enı|aıba|obe|nho|zı|jadı|kıkı)$/iu;
+const reNoun = /^(aq|bou|fuy|ha|ho|hoa|hoq|jı|kuy|maq|muy|mıy?|nhao|rou|suq|ta|ze)$/iu;
 const reConvertKey = /^([ ,.;:?!…]|Enter)$/iu;
 const keyChar = key => key === 'Enter' ? '\n' : key;
 
@@ -59,6 +68,7 @@ const keyChar = key => key === 'Enter' ? '\n' : key;
 // adorn('Ruqshua', t5) === 'Rûqshua' (normalized)
 function adorn(vowel, tone) {
   if (tone === '') return vowel;
+  if (tone === t4 && !document.getElementById('add-t4').checked) return vowel + '8'; // this is weird, but it's what you'd want...
   return vowel.replace(/[aeıouy]/iu, v => (v.replace('ı', 'i') + tone).normalize());
 }
 
@@ -85,6 +95,7 @@ function convert(word) {
 
   word = word.normalize();
   if (reParticle.test(word)) return word;
+  if (reInterjection.test(word)) return word;
   const isNoun = reNoun.test(word);
   var i = 0;
   return word.replace(reSyllables, (_, c, v, q) => {
@@ -116,7 +127,12 @@ window.addEventListener('DOMContentLoaded', (_) => {
     } else if (ch = compose.get(previous + e.key)) {
       // Compose characters.
       write(p => p.replace(/.$/, ch));
-    } else if ((tone = toneKeys.get(e.key)) && (!/[0-9]/.test(e.key) || /[a-zı]/i.test(previous))) {
+    } else if ((tone = toneKeys.get(e.key))
+              // Digits only act as tone converters right after a letter:
+              && !(/[0-9]/.test(e.key) && !/[a-zı]/i.test(previous))
+              // Write a normal question mark after illocutions or non-letters:
+              && !(/[?]/.test(e.key) && /(\b(moq|da|nha|ba|ka)|[^a-zı])$/i.test(kai.value))
+          ) {
       // Manually add a tone to the last word.
       write(p => p.replace(reWordAtEnd, word => adorn(word, tone)));
     } else if (reConvertKey.test(e.key)) {
@@ -130,18 +146,24 @@ window.addEventListener('DOMContentLoaded', (_) => {
   </script>
 </head>
 <body>
-  <h1>mı Kảıchūo</h1>
+  <h1>mı Kảıchuo</h1>
   <div class="soa">
-    <kbd>Chietua ji suq da.</kbd> &rarr; <samp>Chỉetūa jí súq da.</samp><br>
-    <kbd>Chuo2 ni bi, miu sa poq choqgi^ maq da.</kbd> &rarr; <samp>Chúo nỉ bı, mỉu sa pỏq chôqgī máq da.</samp><br>
-    <kbd><a href="https://foldr.moe/vietoaq">
-      &lt;&lt;Choqgi<b>t</b> jaq<b>f</b> chuo<b>p</b>&gt;&gt;
-    </a></kbd> &rarr; <samp>«Chôqgī jãq chúo»</samp>
-    <br>
-    <input type="checkbox" checked id="add-t1">
-    <label for="add-t1">ā</label>
+      <details><summary>Help</summary>
+    <p>This is a tool for writing <a href="https://toaq.net">Toaq</a> on an everyday keyboard.</p>
+    <p>Words you type will get automatically adorned with tones:</p>
+    <p class="ex"><kbd>Chietua ji suq da.</kbd> <br>&rarr; <samp>Chỉetua jí súq da.</samp></p>
+    <p>The default tone is <samp>ỏ</samp> for verbs, <samp>ó</samp> for pronouns, and neutral for particles.</p>
+    </p>
+    <p>To type tones, press <kbd>2345678</kbd> or <kbd>/"?^\~</kbd> or <kbd>pxntkf</kbd> at the end of a word:</p>
+    <p class="ex"><kbd>Chuo2 ni bi, miu sa poq choqgi^ maq da.</kbd> <br>&rarr; <samp>Chúo nỉ bı, mỉu sa pỏq chôqgı máq da.</samp></p>
+    <p>Type <kbd>i9 &lt;&lt; &gt;&gt; &lt;: &gt;: [[ ]]</kbd> to input <samp>i « » ‹ › ⟦ ⟧</samp>.</p>
+    <p>Disable this checkbox if you want sparse tone marking:
+    <input hidden type="checkbox" id="add-t1">
+    <label hidden for="add-t1">ā</label>
     <input type="checkbox" checked id="add-t4">
     <label for="add-t4">ả</label>
+    </p>
+      </details>
   </div>
   <textarea id="kai" rows="20" cols="80" autofocus placeholder="Kảı súq ba"></textarea>
 </body>
