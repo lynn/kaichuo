@@ -54,7 +54,7 @@ const compose = new Map([
   [']]', '⟧'],
 ]);
 
-const syllableForm = '(b|c|ch|d|f|g|h|j|k|l|m|n|nh|p|r|s|sh|t|z|)([aàáâãāäảeèéêẽēëẻıìíîĩīïỉoòóôõōöỏuùúûũūüủyỳýŷỹȳÿỷ]+)(q?)';
+const syllableForm = '(b|c|ch|d|f|g|h|j|k|l|m|n|nh|p|r|s|sh|t|z|)([aàáâãāäảeèéêẽēëẻıìíîĩīïỉioòóôõōöỏuùúûũūüủyỳýŷỹȳÿỷ]+)(q?)';
 const reSyllables = RegExp(syllableForm, 'giu');
 const reWordAtEnd = RegExp('(' + syllableForm + ')+[rpxntkflbzmdgv8]?$', 'iu');
 const reParticle = /^(ba|baq|beı|bı|co|cu|cy|da|fı|ga|go|hı|hoı|hu|ja|je|ju|juaq|ka|ke|keo|kı|kıo|ku|ky|mao|moq|na|nha|nhu|pa|ra|re|rı|ro|roı|ru|sa|sıa|teo|tıo|tıu|to|tou|tu|tushı|tuq)$/iu;
@@ -71,7 +71,7 @@ function adorn(vowel, tone) {
   if (tone === '') return vowel;
   return vowel
     .normalize("NFKD").replace(/[\u0300-\u030f]/g, '')
-    .replace(/[aeıouy]/iu, v => (v.replace('ı', 'i') + tone))
+    .replace(/[aeıiouy]/iu, v => (v.replace('ı', 'i') + tone))
     .normalize();
 }
 
@@ -85,8 +85,10 @@ function convert(word) {
   const add_t4 = document.getElementById('add-t4').checked;
 
   // Turn "choadeod" into "choadeoqt"...
-  const qvie = 'lbzmdgv'.indexOf(word[word.length - 1].toLowerCase());
-  if (qvie >= 0) word = word.replace(/.$/, 'q' + 'rpxntkf'[qvie]);
+  const qvieChar = word[word.length - 1];
+  const qvie = 'lbzmdgv'.indexOf(qvieChar.toLowerCase());
+  let addedQ = qvieChar == qvieChar.toUpperCase() ? 'Q' : 'q';
+  if (qvie >= 0) word = word.replace(/.$/, addedQ + 'rpxntkf'[qvie]);
 
   // Then turn that into "chôadeoq".
   const vie = 'rpxntkf'.indexOf(word[word.length - 1].toLowerCase());
@@ -107,7 +109,7 @@ function convert(word) {
   return word.replace(reSyllables, (_, c, v, q) => {
     const isFirst = i++ === 0;
     const tone = isFirst ? (isNoun ? t2 : (add_t4 ? t4 : '')) : (add_t1 ? t1 : '');
-    const alreadyHasTone = !/^[aeıouy]+$/iu.test(v);
+    const alreadyHasTone = !/^[aeıiouy]+$/iu.test(v);
     const vowel = isFirst && neutralTone || alreadyHasTone ? v : adorn(v, tone);
     return c + vowel + q;
   });
