@@ -57,9 +57,9 @@ const compose = new Map([
 const syllableForm = '(b|c|ch|d|f|g|h|j|k|l|m|n|nh|p|r|s|sh|t|z|)([aàáâãāäảeèéêẽēëẻıìíîĩīïỉioòóôõōöỏuùúûũūüủyỳýŷỹȳÿỷ]+)(q?)';
 const reSyllables = RegExp(syllableForm, 'giu');
 const reWordAtEnd = RegExp('(' + syllableForm + ')+[rpxntkflbzmdgv8]?$', 'iu');
-const reParticle = /^(ba|baq|beı|bı|co|cu|cy|da|fı|ga|go|hı|hoı|hu|ja|je|ju|juaq|ka|ke|keo|kı|kıo|ku|ky|mao|moq|na|nha|nhu|pa|ra|re|rı|ro|roı|ru|sa|sıa|teo|tıo|tıu|to|tou|tu|tushı|tuq)$/iu;
-const reInterjection = /^(ıfu|aja|ahı|ume|ufu|ua|obe|upa|buzy?|oaı|ubaı|enı|aıba|obe|nho|zı|jadı|kıkı|kıjı|oro|a)$/iu;
-const reNoun = /^(aq|bou|cheq|fuy|ha|ho|hoa|hoq|jı|kuy|maq|muy|mıy?|nhao|rou|suq|ta|ze)$/iu;
+const reParticle = /^(ba|baq|beı|bı|co|cu|cy|da|fı|ga|go|hı|hoı|hu|ja|je|ju|juaq|ka|ke|keo|kı|kıo|ku|ky|mao|moq|na|nha|nheo|nhu|pa|ra|re|rı|ro|roı|ru|sa|sıa|teo|tıo|tıu|to|tou|tu|tushı|tuq)$/iu;
+const reInterjection = /^(ıfu|aja|ahı|ume|ufu|ua|obe|upa|buzy?|oaı|ubaı|enı|aıba|obe|nho|zı|jadı|kıkı|kıjı|oro|jaga|ına|a)$/iu;
+const reNoun = /^(aq|bou|cheq|fuy|ha|ho|hoa|hoq|jı|kou|kuy|maq|muy|mıy?|nhao|ray|rou|suq|ta|ze)$/iu;
 const reConvertKey = /^([ ,.;:?!…>»"'“”‘’]|Enter)$/iu;
 const keyChar = key => key === 'Enter' ? '\n' : key;
 
@@ -121,35 +121,39 @@ window.addEventListener('DOMContentLoaded', (_) => {
   kai.value = localStorage.getItem('kai');
   t4.checked = localStorage.getItem('t4') === 'true';
   let ch, tone;
-  kai.addEventListener('keydown', (e) => {
-    const previous = kai.value[kai.selectionStart - 1];
-    // Apply a function to the text before the cursor.
-    function write(f) {
-      const cur = f(kai.value.substring(0, kai.selectionStart));
-      kai.value = cur + kai.value.substring(kai.selectionEnd);
-      kai.selectionStart = kai.selectionEnd = cur.length;
-      e.preventDefault();
+  kai.addEventListener('input', (e) => {
+    const size = (e.data ?? "").length;
+    // document.getElementById("help-summary").innerText = `d:${e.data} c:${e.isComposing}`;
+
+    let buf = kai.value.substring(0, kai.selectionStart - size);
+    const post = kai.value.substring(kai.selectionEnd);
+
+    for (const key of [...e.data ?? ""]) {
+      const previous = buf[buf.length - 1] || "";
+      if (key === 'i') {
+        // Type dotless ı's.
+        buf = buf + 'ı';
+      } else if (ch = compose.get(previous + key)) {
+        // Compose characters.
+        buf = buf.replace(/.$/, ch);
+      } else if ((tone = toneKeys.get(key))
+                // Digits only act as tone converters right after a letter:
+                && !(/[0-9]/.test(key) && !/[a-zaàáâãāäảeèéêẽēëẻıìíîĩīïỉoòóôõōöỏuùúûũūüủyỳýŷỹȳÿỷ]/i.test(previous))
+                // Write a normal question mark after illocutions or non-letters:
+                && !(/[?]/.test(key) && /(\b(moq|da|nha|ba|ka)|[^a-zaàáâãāäảeèéêẽēëẻıìíîĩīïỉoòóôõōöỏuùúûũūüủyỳýŷỹȳÿỷ])$/i.test(kai.value))
+            ) {
+        // Manually add a tone to the last word.
+        buf = buf.replace(reWordAtEnd, word => adorn(word, tone));
+      } else if (reConvertKey.test(key)) {
+        // Automatically add tones to (and Vietoaq-parse) the last word.
+        buf = buf.replace(reWordAtEnd, convert) + keyChar(key);
+      } else {
+        buf += key;
+      }
     }
 
-    if (e.key === 'i') {
-      // Type dotless ı's.
-      write(p => p + 'ı');
-    } else if (ch = compose.get(previous + e.key)) {
-      // Compose characters.
-      write(p => p.replace(/.$/, ch));
-    } else if ((tone = toneKeys.get(e.key))
-              // Digits only act as tone converters right after a letter:
-              && !(/[0-9]/.test(e.key) && !/[a-zaàáâãāäảeèéêẽēëẻıìíîĩīïỉoòóôõōöỏuùúûũūüủyỳýŷỹȳÿỷ]/i.test(previous))
-              // Write a normal question mark after illocutions or non-letters:
-              && !(/[?]/.test(e.key) && /(\b(moq|da|nha|ba|ka)|[^a-zaàáâãāäảeèéêẽēëẻıìíîĩīïỉoòóôõōöỏuùúûũūüủyỳýŷỹȳÿỷ])$/i.test(kai.value))
-          ) {
-      // Manually add a tone to the last word.
-      write(p => p.replace(reWordAtEnd, word => adorn(word, tone)));
-    } else if (reConvertKey.test(e.key)) {
-      // Automatically add tones to (and Vietoaq-parse) the last word.
-      write(p => p.replace(reWordAtEnd, convert) + keyChar(e.key));
-    }
-
+    kai.value = buf + post;
+    kai.selectionStart = kai.selectionEnd = buf.length;
     localStorage.setItem('kai', kai.value);
   });
 });
@@ -164,7 +168,7 @@ window.addEventListener('DOMContentLoaded', (_) => {
     <input type="checkbox" checked id="add-t4" onchange="localStorage.setItem('t4', this.checked.toString())">
     <label for="add-t4">Mark falling tone (ả)</label>
     </p>
-      <details><summary>Help</summary>
+      <details><summary id="help-summary">Help</summary>
     <p>This is a tool for writing <a href="https://toaq.net">Toaq</a> on an everyday keyboard.</p>
     <p>Words you type are automatically adorned with tone markers:</p>
     <p class="ex"><kbd>Chietua ji suq nha.</kbd> <br>&rarr; <samp>Chỉetua jí súq nha.</samp></p>
