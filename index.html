@@ -11,7 +11,7 @@
   <link href='https://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>
   <link href='https://fonts.googleapis.com/css?family=Raleway' rel='stylesheet' type='text/css'>
 
-  <title>mı Kảıchuo</title>
+  <title>mı Kaıchuo</title>
   <style>
     * { box-sizing: border-box; }
     body { max-width: 40em; margin: auto; font-size: 18px; font-family: 'Open Sans', sans-serif; text-align: center; background: #f8f8f8; color: #222222; padding: 10px; }
@@ -25,27 +25,23 @@
     .soa samp { font-family: inherit; font-weight: bold; color: #197A92; }
   </style>
   <script>
-const t1 = '\u0304';
-const t2 = '\u0301';
-const t3 = '\u0308';
-const t4 = '\u0309';
-const t5 = '\u0302';
-const t6 = '\u0300';
-const t7 = '\u0303';
-const tones = [t1, t2, t3, t4, t5, t6, t7];
+const d2 = '\u0301';
+const d3 = '\u0308';
+const d4 = '\u0302';
+const underdot = '\u0323';
 
 const toneKeys = new Map([
-  ['-', t1], ['1', t1],
-  ['/', t2], ['2', t2],
-  ['"', t3], ['3', t3],
-  ['?', t4], ['4', t4],
-  ['^', t5], ['5', t5],
-  ['\\',t6], ['6', t6],
-  ['~', t7], ['7', t7],
+  ['/', d2], ['2', d2],
+  ['"', d3], ['3', d3],
+  ['^', d4], ['4', d4],
 ]);
 
 const compose = new Map([
-  ['ı9', 'i'],
+  ['i', 'ı'],
+  ['v', 'ꝡ'],
+  ['V', 'Ꝡ'],
+
+  ['ı0', 'i'],
   ['<<', '«'],
   ['<:', '‹'],
   ['>>', '»'],
@@ -54,72 +50,139 @@ const compose = new Map([
   [']]', '⟧'],
 ]);
 
-const syllableForm = '(b|c|ch|d|f|g|h|j|k|l|m|n|nh|p|r|s|sh|t|z|)([aàáâãāäảeèéêẽēëẻıìíîĩīïỉioòóôõōöỏuùúûũūüủyỳýŷỹȳÿỷ]+)(q?)';
-const reSyllables = RegExp(syllableForm, 'giu');
-const reWordAtEnd = RegExp('(' + syllableForm + ')+[rpxntkflbzmdgv8]?$', 'iu');
-const reParticle = /^(ba|baq|beı|bı|co|cu|cy|da|fı|ga|go|hı|hoı|hu|ja|je|ju|juaq|ka|ke|keo|kı|kıo|ku|ky|mao|moq|na|nha|nheo|nhu|pa|ra|re|rı|ro|roı|ru|sa|sıa|teo|tıo|tıu|to|tou|tu|tushı|tuq)$/iu;
-const reInterjection = /^(ıfu|aja|ahı|ume|ufu|ua|obe|upa|buzy?|oaı|ubaı|enı|aıba|obe|nho|zı|jadı|kıkı|kıjı|oro|jaga|ına|a)$/iu;
-const reNoun = /^(aq|bou|cheq|fuy|ha|ho|hoa|hoq|jı|kou|kuy|maq|muy|mıy?|nhao|ray|rou|suq|ta|ze)$/iu;
+const wordTones = new Map([
+
+  // personal pronouns
+  ["jı", d2],
+  ["suq", d2],
+  ["suna", d2],
+  ["nhao", d2],
+  ["nhana", d2],
+  ["umo", d2],
+  ["ıme", d2],
+  ["suho", d2],
+  ["ama", d2],
+
+  // anaphoric pronouns
+  ["ho", d2],
+  ["hoq", d2],
+  ["maq", d2],
+  ["ta", d2],
+  ["aq", d2],
+  ["cheq", d2],
+
+  // other pronouns
+  ["hoa", d2],
+  ["ha", d2],
+  ["mı", d2],
+
+  // illocutions
+  ["moq", d2],
+
+  // focus prefixes
+  ["ku", d2],
+  ["beı", d2],
+  ["to", d2],
+  ["mao", d2],
+  ["juaq", d2],
+
+  // quantifiers
+  ["sa", d2],
+  ["tu", d2],
+  ["tuq", d2],
+  ["sıa", d2],
+  ["nı", d2],
+  ["baq", d2],
+  ["hı", d2],
+  ["hu", d2],
+  ["ke", d2],
+  ["ja", d2],
+
+  // conjunctions
+  ["roı", d2],
+  ["ru", d2],
+  ["ra", d2],
+  ["ro", d2],
+  ["rı", d2],
+  ["keo", d2],
+
+  // vocatives
+  ["hoı", d2],
+
+  // complementizers
+  ["ꝡe", d3],
+  ["ju", d3],
+  ["la", d3],
+
+  // cleft constructions
+  ["na", d3],
+  ["bı", d3],
+  ["go", d3],
+
+  // parentheticals
+  ["kıo", d3],
+]);
+
+const reWordAtEnd = /\p{L}+1?$/iu;
 const reConvertKey = /^([ ,.;:?!…>»"'“”‘’]|Enter)$/iu;
 const keyChar = key => key === 'Enter' ? '\n' : key;
 
 // Add a tone to a vowel, syllable, or word.
 // adorn('u',       t3) === 'ü'       (normalized)
-// adorn('fıeq',    t4) === 'fỉeq'    (normalized)
-// adorn('Ruqshua', t5) === 'Rûqshua' (normalized)
-function adorn(vowel, tone) {
-  if (tone === '') return vowel;
-  return vowel
+// adorn('fıeq',    t2) === 'fíeq'    (normalized)
+// adorn('Ruqshua', t4) === 'Rûqshua' (normalized)
+function adorn(text, tone) {
+  text = text
     .normalize("NFKD").replace(/[\u0300-\u030f]/g, '')
-    .replace(/[aeıiouy]/iu, v => (v.replace('ı', 'i') + tone))
-    .normalize();
+    .replace(/[aeıiou]/iu, v => v.replace('ı', 'i') + tone);
+  return normalizeToaq(text);
 }
 
-// Add automatic diacritics to an input word. Also handle Vietoaq tones.
-// convert('Ruqshua') === 'Rủqshūa'
-// convert('Rûqshua') === 'Rûqshūa'
-// convert('jı')      === 'jí'
-// convert('jıt')     === 'jî'
-function convert(word) {
-  const add_t1 = false;
-  const add_t4 = document.getElementById('add-t4').checked;
-
-  // Turn "choadeod" into "choadeoqt"...
-  const qvieChar = word[word.length - 1];
-  const qvie = 'lbzmdgv'.indexOf(qvieChar.toLowerCase());
-  let addedQ = qvieChar == qvieChar.toUpperCase() ? 'Q' : 'q';
-  if (qvie >= 0) word = word.replace(/.$/, addedQ + 'rpxntkf'[qvie]);
-
-  // Then turn that into "chôadeoq".
-  const vie = 'rpxntkf'.indexOf(word[word.length - 1].toLowerCase());
-  if (vie >= 0) {
-    const bare = word.replace(/.$/, '');
-    word = vie === 3 && !add_t4 ? bare+'8' : adorn(bare, tones[vie])
+// Add an underdot to the last position in a word, and remove all others
+// (assuming the user will continue typing without calling this fn again)
+//
+// adornUnderdot('bọhạbuq') === 'bohabụq' (normalized)
+function adornUnderdot(text) {
+  text = text.normalize("NFKD").replace(/\u0323/g, '');
+  // is there seriously no better way to do this?
+  let match, lastMatch;
+  let re = /(?:[aeıiou]\p{Mn}*)+/giu;
+  while(match = re.exec(text)) {
+    lastMatch = match;
   }
+  // add 1 to skip past the first vowel, that's where we insert the diacritic
+  let i = lastMatch.index + 1;
+  text = text.slice(0, i) + underdot + text.slice(i);
+  return normalizeToaq(text);
+}
 
-  // A trailing 8 means "no tone / dictionary form".
-  const neutralTone = /8$/.test(word);
-  word = word.replace(/8$/, '');
+// Unicode NFC normalization will normalize ị̂ as ị+◌̂, which looks bad; switch those cases out for î+◌̣
+// Also, swap `i` for `ı`
+function normalizeToaq(text) {
+  return text
+    .normalize()
+    .replace(
+      /([ạẹịọụ])(\p{Mn}+)/giu,
+      (_, v, ds) => (v.normalize("NFD")[0] + ds).normalize() + underdot
+    )
+    .replace('i', 'ı');
+}
 
-  word = word.normalize();
-  if (reParticle.test(word)) return word;
-  if (reInterjection.test(word)) return word;
-  const isNoun = reNoun.test(word);
-  var i = 0;
-  return word.replace(reSyllables, (_, c, v, q) => {
-    const isFirst = i++ === 0;
-    const tone = isFirst ? (isNoun ? t2 : (add_t4 ? t4 : '')) : (add_t1 ? t1 : '');
-    const alreadyHasTone = !/^[aeıiouy]+$/iu.test(v);
-    const vowel = isFirst && neutralTone || alreadyHasTone ? v : adorn(v, tone);
-    return c + vowel + q;
-  });
+// Add automatic diacritics to an input word.
+function convert(word) {
+  // trailing 1: force no tone marker
+  if(/1$/.test(word)) {
+    return adorn(word.slice(0, -1), '');
+  }
+  // otherwise: insert default tone if we have one
+  let wordTone = wordTones.get(word.toLowerCase());
+  if(wordTone) word = adorn(word, wordTone);
+  return word;
 }
 
 window.addEventListener('DOMContentLoaded', (_) => {
   const kai = document.getElementById('kai');
-  const t4 = document.getElementById('add-t4');
   kai.value = localStorage.getItem('kai');
-  t4.checked = localStorage.getItem('t4') === 'true';
   let ch, tone;
   kai.addEventListener('input', (e) => {
     const size = (e.data ?? "").length;
@@ -130,23 +193,29 @@ window.addEventListener('DOMContentLoaded', (_) => {
 
     for (const key of [...e.data ?? ""]) {
       const previous = buf[buf.length - 1] || "";
-      if (key === 'i') {
-        // Type dotless ı's.
-        buf = buf + 'ı';
+      const previousWasLetter = /\p{L}/iu.test(previous);
+
+      // Attach underdot.
+      if (key === '-' && previousWasLetter) {
+        buf = buf.replace(reWordAtEnd, adornUnderdot);
+
+      // Compose characters.
+      } else if (ch = compose.get(key)) {
+        buf = buf + ch;
       } else if (ch = compose.get(previous + key)) {
-        // Compose characters.
         buf = buf.replace(/.$/, ch);
+
+      // Attach tones.
       } else if ((tone = toneKeys.get(key))
                 // Digits only act as tone converters right after a letter:
-                && !(/[0-9]/.test(key) && !/[a-zaàáâãāäảeèéêẽēëẻıìíîĩīïỉoòóôõōöỏuùúûũūüủyỳýŷỹȳÿỷ]/i.test(previous))
-                // Write a normal question mark after illocutions or non-letters:
-                && !(/[?]/.test(key) && /(\b(moq|da|nha|ba|ka)|[^a-zaàáâãāäảeèéêẽēëẻıìíîĩīïỉoòóôõōöỏuùúûũūüủyỳýŷỹȳÿỷ])$/i.test(kai.value))
+                && !(/[0-9]/.test(key) && !previousWasLetter)
             ) {
         // Manually add a tone to the last word.
         buf = buf.replace(reWordAtEnd, word => adorn(word, tone));
       } else if (reConvertKey.test(key)) {
-        // Automatically add tones to (and Vietoaq-parse) the last word.
+        // Automatically add tones to the last word.
         buf = buf.replace(reWordAtEnd, convert) + keyChar(key);
+
       } else {
         buf += key;
       }
@@ -160,25 +229,20 @@ window.addEventListener('DOMContentLoaded', (_) => {
   </script>
 </head>
 <body>
-  <h1>mı Kảıchuo</h1>
+  <h1>mı Kaıchuo</h1>
   <div class="soa">
-    <p>
-    <!--<input hidden type="checkbox" id="add-t1">
-    <label hidden for="add-t1">ā</label>-->
-    <input type="checkbox" checked id="add-t4" onchange="localStorage.setItem('t4', this.checked.toString())">
-    <label for="add-t4">Mark falling tone (ả)</label>
-    </p>
-      <details><summary id="help-summary">Help</summary>
-    <p>This is a tool for writing <a href="https://toaq.net">Toaq</a> on an everyday keyboard.</p>
-    <p>Words you type are automatically adorned with tone markers:</p>
-    <p class="ex"><kbd>Chietua ji suq nha.</kbd> <br>&rarr; <samp>Chỉetua jí súq nha.</samp></p>
-    <p>(The default is <samp>ỏ</samp> for verbs, <samp>ó</samp> for pronouns, and neutral for particles.)</p>
-    </p>
-    <p>To type tones, press <kbd>2345678</kbd> or <kbd>/"?^\~</kbd> or <kbd>pxntkf</kbd> at the end of a word:</p>
-    <p class="ex"><kbd>Chuo2 ni bi, miu sa poq choqgi^ maq da.</kbd> <br>&rarr; <samp>Chúo nỉ bı, mỉu sa pỏq chôqgı máq da.</samp></p>
-    <p>Type <kbd>i9 &lt;&lt; &gt;&gt; &lt;: &gt;: [[ ]]</kbd> to write <samp>i « » ‹ › ⟦ ⟧</samp>.</p>
-      </details>
+    <details>
+      <summary id="help-summary">Help</summary>
+      <p>This is a tool for writing <a href="https://toaq.net">Toaq</a> on an everyday keyboard.</p>
+      <p>Words you type are automatically adorned with tone markers:</p>
+      <p class="ex"><kbd>Va suq na chietua ji hoa nha.</kbd> <br>&rarr; <samp>Ꝡa súq nä chıetua jí hóa nha.</samp></p>
+      <p>(The default is <samp>o</samp> for verbs, <samp>ó</samp> for pronouns, and each particle's default tone.)</p>
+      </p>
+      <p>To type tones, press <kbd>1234</kbd> or <kbd>/"^</kbd> at the end of a word, and press <kbd>-</kbd> to insert an underdot:</p>
+      <p class="ex"><kbd>Ni chuo ki-shuai, na miu sa poq va3 choqgi maq jaq4 da.</kbd> <br>&rarr; <samp>Ní chuo kı̣shuaı, nä mıu sá poq ꝡä choqgı máq jâq da.</samp></p>
+      <p>Type <kbd>v i0 &lt;&lt; &gt;&gt; &lt;: &gt;: [[ ]]</kbd> to write <samp>ꝡ i « » ‹ › ⟦ ⟧</samp>.</p>
+    </details>
   </div>
-  <textarea id="kai" rows="20" autofocus placeholder="Kảı súq shou"></textarea>
+  <textarea id="kai" rows="20" autofocus placeholder="Kaı súq doa"></textarea>
 </body>
 </html>
