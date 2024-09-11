@@ -1,1 +1,1 @@
-# Moved to https://github.com/toaq/kaichuo/
+# Moved to https://github.com/toaq/kai
